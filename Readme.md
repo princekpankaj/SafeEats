@@ -123,7 +123,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 ```bash
 # Clone the repo
-git clone https://github.com/princekpankaj/dietary-plan-backend.git
+git clone https://github.com/princekpankaj/SafeEats/tree/backend.git
 
 # Go into project folder
 cd backend
