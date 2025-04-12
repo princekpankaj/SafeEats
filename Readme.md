@@ -1,0 +1,168 @@
+# 🥗 Dietary Plan Backend
+
+This is a Node.js backend project that allows users to register, save their allergens, and scan food product barcodes to check if the product contains any unsafe ingredients based on their personal allergy profile. It uses the **Open Food Facts API** to fetch ingredient and nutrition data from barcodes.
+
+---
+
+## 📊 Flow Diagram (Short Description)
+
+1. **User Registers/Login**
+   - Receives a JWT token for authentication.
+
+2. **User Adds Allergens**
+   - Like “milk”, “almond”, “peanut”, etc. (either during or after registration).
+
+3. **User Scans a Barcode**
+   - Frontend sends the barcode to our backend.
+   - Backend fetches product info using **Open Food Facts API**.
+   - Compares product ingredients with saved allergens.
+   - Returns whether the product is safe or not along with nutrition facts.
+
+---
+
+## 🚀 Tech Stack
+
+- **Node.js + Express**
+- **MongoDB + Mongoose**
+- **JWT Authentication**
+- **Open Food Facts API**
+
+---
+
+## 🔌 API Endpoints
+
+> ⚠️ All protected routes require:
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
+
+---
+
+### 📍 Auth Routes
+
+#### 📝 Register  
+`POST /api/auth/register`
+
+```json
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "123456"
+}
+```
+
+#### 🔐 Login  
+`POST /api/auth/login`
+
+```json
+{
+  "email": "test@example.com",
+  "password": "123456"
+}
+```
+
+---
+
+### 👤 User Routes
+
+#### ➕ Add Allergens  
+`POST /api/user/allergens`
+
+```json
+{
+  "allergens": ["milk", "almond"]
+}
+```
+
+#### 📄 Get Allergens  
+`GET /api/user/allergens`
+
+#### ✏️ Update Allergens  
+`PATCH /api/user/allergens`
+
+```json
+{
+  "allergens": ["peanut", "soy"]
+}
+```
+
+---
+
+### 🔍 Scan Route
+
+#### 🛆 Scan a Barcode  
+`POST /api/scan`
+
+```json
+{
+  "barcode": "3017620429484"
+}
+```
+
+✅ Sample Response:
+
+```json
+{
+  "product_name": "Nutella",
+  "isSafe": false,
+  "matchedAllergens": ["milk"],
+  "message": "❌ Warning! This product contains allergens.",
+  "nutrition": {
+    "calories": 539,
+    "fat": 30.9,
+    "sugar": 56.3,
+    "proteins": 6.3
+  },
+  "ingredients": "sugar, palm oil, hazelnuts, cocoa, skimmed milk powder..."
+}
+```
+
+---
+
+## ⚙️ Setup Instructions
+
+```bash
+# Clone the repo
+git clone https://github.com/princekpankaj/dietary-plan-backend.git
+
+# Go into project folder
+cd backend
+
+# Install dependencies
+npm install
+
+# Create .env file
+touch .env
+```
+
+`.env` file format:
+
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+```
+
+```bash
+# Run the server
+npm start
+```
+
+---
+
+## 📦 Example Barcodes to Test
+
+| Product     | Barcode         |
+|-------------|------------------|
+| Nutella     | 3017620429484    |
+| Coca-Cola   | 5449000000996    |
+| Oreo        | 7622300449283    |
+
+---
+
+## ✅ Future Scope
+
+- Add frontend UI
+- User profile page
+- Barcode scan with phone camera (mobile app integration)
+
