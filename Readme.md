@@ -123,7 +123,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 ```bash
 # Clone the repo
-git clone https://github.com/princekpankaj/SafeEats/tree/backend.git
+git clone https://github.com/princekpankaj/SafeEats.git
 
 # Go into project folder
 cd backend
@@ -160,9 +160,4 @@ npm start
 
 ---
 
-## ✅ Future Scope
-
-- Add frontend UI
-- User profile page
-- Barcode scan with phone camera (mobile app integration)
 
