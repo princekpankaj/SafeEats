@@ -28,4 +28,31 @@ router.get('/allergens', protect, async (req, res) => {
   }
 });
 
+// PATCH /api/user/allergens
+// update user's allergens
+router.patch('/allergens', protect, async (req, res) => {
+    const userId = req.user.id;
+    const { allergens } = req.body;
+  
+    if (!Array.isArray(allergens)) {
+      return res.status(400).json({ message: "Allergens must be an array" });
+    }
+  
+    try {
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { allergens },
+        { new: true }
+      );
+  
+      res.json({
+        message: "Allergens updated successfully",
+        allergens: updatedUser.allergens,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error while updating allergens" });
+    }
+  });
+  
+
 module.exports = router;
