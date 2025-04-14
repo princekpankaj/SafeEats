@@ -8,24 +8,34 @@ import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
 
-  const formhandler = (e) => {
+  const formhandler = async (e) => {
     e.preventDefault();
-
-    /*we have to convert the data into "Object" if we want to get the data from localStorage, so we used "JSON.parse()" method. it will convert "JSON-->OBJECT"*/
-    const getData = JSON.parse(localStorage.getItem("user") || "[]"); 
-
-    
-    let arr = [];
-    arr = [...getData];
-    arr.push(data);   
-    
-    /*used to set the data on localStorage(But we have to set the data into JSON formate so we used "JSON.stringify()" method for this) it will convert "OBJECT-->JSON"*/
-    localStorage.setItem("user", JSON.stringify(arr)) 
-    
-    alert("Signup Successfully !");
-    navigate("/login")
-
+  
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+  
+      const result = await response.json();
+  
+      if (response.ok) {
+        alert("Signup Successfully!");
+        // Optionally store token or other user info
+        // localStorage.setItem("token", result.token); 
+        navigate("/login");
+      } else {
+        alert(result.message || "Signup failed. Try again.");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      alert("Something went wrong. Please try again.");
+    }
   };
+  
 
   const userDetail = {
     name:"",

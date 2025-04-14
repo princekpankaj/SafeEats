@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import SafeEats_logo from "../Images/SafeEats_logo.png";
-import SignUpBg from "../Images/SignUp-bg.png"; // Import the background image
-import { useNavigate } from "react-router-dom";
+import SignUpBg from "../Images/SignUp-bg.png";
+import { useNavigate, Link } from "react-router-dom";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const navigate = useNavigate();
 
   const handleInput = (event) => {
@@ -15,29 +14,40 @@ const SignIn = () => {
     if (name === "password") setPassword(value);
   };
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
 
-    let getDetails = JSON.parse(localStorage.getItem("user"));
-    if (!getDetails) {
-      alert("No users found. Please sign up first!");
-      return;
-    }
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password.trim(),
+        }),
+      });
 
-    const matchedUser = getDetails.find(
-      (user) => user.email === email && user.password === password
-    );
+      const result = await response.json();
 
-    if (matchedUser) {
-      localStorage.setItem("loggedInEmail", email);      /*it is becos to get loged in user-name into dashboard */
+      if (response.ok) {
+        // Save token and user info separately
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
 
-      alert("Login Successfully!");
-      navigate("/home");           /*Navigate to Dashboard page */
-    } 
-    else {
-      alert("Invalid email or password!");
-      setEmail("");
-      setPassword("");
+        alert("Login Successfully!");
+
+        // Delay to ensure storage is set before redirect
+        setTimeout(() => {
+          navigate("/home");
+        }, 100);
+      } else {
+        alert(result.message || "Invalid email or password!");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Something went wrong. Please try again.");
     }
   };
 
@@ -78,6 +88,7 @@ const SignIn = () => {
             placeholder="Enter your email"
             value={email}
             onChange={handleInput}
+            required
           />
           <input
             className="border border-gray-300 bg-transparent text-white placeholder-gray-400 p-3 text-base md:text-lg w-full rounded-md mb-4 focus:ring-2 focus:ring-blue-500"
@@ -86,15 +97,16 @@ const SignIn = () => {
             placeholder="Enter your password"
             value={password}
             onChange={handleInput}
+            required
           />
           <p className="text-center text-sm md:text-base text-white mb-4">
             Create an account?
-            <a
+            <Link
               className="font-semibold text-blue-400 underline hover:text-blue-600 ml-1"
-              href="/"
+              to="/signup"
             >
               SignUp
-            </a>
+            </Link>
           </p>
           <button
             type="submit"
