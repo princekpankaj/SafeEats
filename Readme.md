@@ -86,6 +86,17 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
+#### ❌ Delete Allergens  
+`DELETE /api/user/allergens`
+
+```json
+{
+  "allergens": ["soy"]
+}
+```
+
+Removes one or more specified allergens from the user’s list.
+
 ---
 
 ### 🔍 Scan Route
@@ -160,4 +171,18 @@ npm start
 
 ---
 
+## 📌 Project Roadmap
 
+- ✅ Setup backend with Express and MongoDB
+- ✅ User registration & login with JWT
+- ✅ Store and manage allergens
+- ✅ Scan barcode and fetch product data using Open Food Facts
+- ✅ Compare allergens with product ingredients
+- ✅ Display nutrition information
+- ✅ Add allergen update and delete APIs
+
+# future Scope
+- 🔜 Rate limiting or abuse protection
+- 🔜 Admin dashboard for product scan logs
+
+--
