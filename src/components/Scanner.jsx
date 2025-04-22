@@ -4,21 +4,14 @@ import { Html5Qrcode } from "html5-qrcode";
 const Scanner = () => {
   const [nutritionData, setNutritionData] = useState(null);
   const [safetyStatus, setSafetyStatus] = useState(null);
+  const [productName, setProductName] = useState("");
+  const [matchedAllergens, setMatchedAllergens] = useState([]);
+  const [message, setMessage] = useState("");
   const [recipeImage, setRecipeImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
   const scannerContainerRef = useRef(null);
   const qrCodeScannerRef = useRef(null);
-
-  const calculateSafetyScore = (calories, proteins, carbs) => {
-    const proteinRatio = (proteins / calories) * 100;
-    const carbRatio = (carbs / calories) * 100;
-    return proteinRatio - carbRatio;
-  };
-
-  const checkNutritionSafety = (calories, proteins, carbs) => {
-    return calories <= 200 && proteins >= 10 && carbs <= 30;
-  };
 
   const handleRecipeImageUpload = (event) => {
     const file = event.target.files[0];
@@ -31,20 +24,38 @@ const Scanner = () => {
     }
   };
 
-  const handleBarcodeSubmit = () => {
-    const mockNutritionData = {
-      calories: 245,
-      proteins: 12,
-      carbs: 30,
-    };
-    setNutritionData(mockNutritionData);
-    setSafetyStatus(
-      checkNutritionSafety(
-        mockNutritionData.calories,
-        mockNutritionData.proteins,
-        mockNutritionData.carbs
-      )
-    );
+  const handleBarcodeSubmit = async () => {
+    if (!barcodeInput.trim()) return;
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("http://localhost:5000/api/scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ barcode: barcodeInput }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const { nutrition, isSafe, matchedAllergens, product_name, message } =
+          data;
+        setNutritionData(nutrition);
+        setSafetyStatus(isSafe);
+        setProductName(product_name);
+        setMatchedAllergens(matchedAllergens);
+        setMessage(message);
+      } else {
+        alert(data.message || "Failed to fetch scan result.");
+      }
+    } catch (error) {
+      console.error("Scan error:", error);
+      alert("Something went wrong while scanning.");
+    }
+
     setBarcodeInput("");
     closeModal();
   };
@@ -159,7 +170,7 @@ const Scanner = () => {
         </div>
       )}
 
-      <div className="mt-12 grid grid-cols-2 gap-8">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-center mb-6">
             <i className="fas fa-camera text-3xl text-black mr-4"></i>
@@ -187,6 +198,7 @@ const Scanner = () => {
             )}
             <div className="bg-gray-100 p-6 rounded-lg">
               <h3 className="font-semibold mb-4">Recipe Details:</h3>
+              {/* Add OCR or recipe parsing display here */}
             </div>
           </div>
         </div>
@@ -218,38 +230,47 @@ const Scanner = () => {
 
           {nutritionData && (
             <div className="bg-gray-100 p-6 rounded-lg mt-6">
-              <h3 className="font-semibold mb-4">Scan Results:</h3>
-              <div className="space-y-3">
+              <h3 className="font-semibold mb-2">Scan Results:</h3>
+              <p className="mb-4 font-medium">{productName}</p>
+              <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Calories</span>
-                  <span className="font-medium">
-                    {nutritionData.calories} kcal
-                  </span>
+                  <span className="font-medium">{nutritionData.calories}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Protein</span>
-                  <span className="font-medium">{nutritionData.proteins}g</span>
+                  <span className="font-medium">{nutritionData.proteins}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Carbs</span>
-                  <span className="font-medium">{nutritionData.carbs}g</span>
+                  <span className="text-gray-600">Sugar</span>
+                  <span className="font-medium">{nutritionData.sugar}</span>
                 </div>
-                <div className="mt-4 flex items-center">
-                  <i
-                    className={`fas ${
-                      safetyStatus
-                        ? "fa-check-circle text-green-500"
-                        : "fa-times-circle text-red-500"
-                    } mr-2`}
-                  ></i>
-                  <span
-                    className={`font-medium ${
-                      safetyStatus ? "text-green-500" : "text-red-500"
-                    }`}
-                  >
-                    {safetyStatus ? "Safe to eat" : "Not safe to eat"}
-                  </span>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Fat</span>
+                  <span className="font-medium">{nutritionData.fat}</span>
                 </div>
+                <div className="mt-3 text-sm text-gray-700">{message}</div>
+                {matchedAllergens.length > 0 && (
+                  <div className="mt-3 text-red-500 text-sm">
+                    Allergens detected: {matchedAllergens.join(", ")}
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 flex items-center">
+                <i
+                  className={`fas ${
+                    safetyStatus
+                      ? "fa-check-circle text-green-500"
+                      : "fa-times-circle text-red-500"
+                  } mr-2`}
+                ></i>
+                <span
+                  className={`font-medium ${
+                    safetyStatus ? "text-green-500" : "text-red-500"
+                  }`}
+                >
+                  {safetyStatus ? "Safe to eat" : "Not safe to eat"}
+                </span>
               </div>
             </div>
           )}

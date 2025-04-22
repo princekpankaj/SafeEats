@@ -30,20 +30,22 @@ const SignIn = () => {
       });
 
       const result = await response.json();
+      // console.log("API Response:", result); //  for debugging purpose
 
-      if (response.ok) {
-        // Save token and user info separately
-        localStorage.setItem("token", result.token);
-        localStorage.setItem("user", JSON.stringify(result.user));
+      if (response.ok && result.token && result.name && result.email) {
+        // Store all user data properly
+        localStorage.setItem("accessToken", result.token);
+        localStorage.setItem("loggedInName", result.name);
+        localStorage.setItem("loggedInEmail", result.email);
+        localStorage.setItem("user", JSON.stringify(result));
 
         alert("Login Successfully!");
 
-        // Delay to ensure storage is set before redirect
         setTimeout(() => {
           navigate("/home");
         }, 100);
       } else {
-        alert(result.message || "Invalid email or password!");
+        alert(result.message || "Invalid response data from server.");
       }
     } catch (error) {
       console.error("Login error:", error);

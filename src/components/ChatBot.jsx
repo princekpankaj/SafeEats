@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaRobot } from "react-icons/fa";
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-
-  // ✅ Welcome message shown initially
   const [messages, setMessages] = useState([
     {
       from: "bot",
@@ -13,49 +11,72 @@ const ChatBot = () => {
     },
   ]);
 
+  const endOfMessagesRef = useRef(null);
+
+  const scrollToBottom = () => {
+    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   const toggleChat = () => setIsOpen(!isOpen);
 
-  const formatRecipe = (text) => {
-    let formatted = text;
-    const headers = ["Recipe", "Ingredients", "Instructions", "Equipment"];
+  const typeBotResponse = (fullText) => {
+    let index = 0;
+    const typingInterval = 30; // ms per character
+    let currentText = "";
 
-    headers.forEach((header) => {
-      const regex = new RegExp(`${header}:`, "gi");
-      formatted = formatted.replace(
-        regex,
-        `<br/><strong>${header}:</strong><br/><br/>`
-      );
-    });
+    const typingTimer = setInterval(() => {
+      currentText += fullText[index];
+      index++;
 
-    formatted = formatted.replace(/(\d+\.)/g, "<br/><br/><strong>$1</strong>");
-    formatted = formatted.replace(/\n/g, "<br/>");
+      setMessages((prev) => [
+        ...prev.slice(0, -1),
+        { from: "bot", text: currentText },
+      ]);
 
-    return formatted;
+      if (index >= fullText.length) {
+        clearInterval(typingTimer);
+      }
+    }, typingInterval);
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = { from: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { from: "bot", text: "⏳ Let me think..." },
+    ]);
     setInput("");
 
     try {
-      const response = await fetch("http://localhost:5000/generate-recipe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: input }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/chatbot/generate-recipe",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: input }),
+        }
+      );
 
       const data = await response.json();
-      const botReply = formatRecipe(data.recipe || "Sorry, I couldn't generate a recipe.");
-      setMessages((prev) => [...prev, { from: "bot", text: botReply }]);
+
+      // Add a little pause before typing starts
+      setTimeout(() => {
+        setMessages((prev) => [...prev.slice(0, -1), { from: "bot", text: "" }]);
+        typeBotResponse(data.recipe || "Sorry, I couldn't generate a recipe.");
+      }, 800); // delay after "Let me think..."
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
-        ...prev,
+        ...prev.slice(0, -1),
         { from: "bot", text: "Oops! Something went wrong." },
       ]);
     }
@@ -66,7 +87,7 @@ const ChatBot = () => {
       {isOpen ? (
         <div className="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white border border-gray-300 dark:border-zinc-700 shadow-2xl rounded-xl w-80 h-96 flex flex-col overflow-hidden">
           <div className="bg-black text-white px-4 py-2 font-semibold flex justify-between items-center">
-            <span className="flex items-center gap-2 ">
+            <span className="flex items-center gap-2">
               <FaRobot /> AI Chef
             </span>
             <button onClick={toggleChat}>✖️</button>
@@ -85,6 +106,7 @@ const ChatBot = () => {
                 <div dangerouslySetInnerHTML={{ __html: msg.text }} />
               </div>
             ))}
+            <div ref={endOfMessagesRef} />
           </div>
 
           <div className="p-2 flex border-t border-gray-300 dark:border-zinc-700">

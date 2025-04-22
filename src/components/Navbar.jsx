@@ -10,35 +10,50 @@ const Navbar = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("accessToken");
+  const user = JSON.parse(localStorage.getItem("user"));
+
   useEffect(() => {
-    const loggedInEmail = localStorage.getItem("loggedInEmail");
-    if (loggedInEmail) {
-      const allUsers = JSON.parse(localStorage.getItem("user")) || [];
-      const matchedUser = allUsers.find((user) => user.email === loggedInEmail);
-      if (matchedUser) {
-        setCurrentUserName(matchedUser.name);
-        const storedAllergies = JSON.parse(localStorage.getItem("allergies")) || [];
-        setAllergies(storedAllergies);
-      }
+    if (user?.name) {
+      setCurrentUserName(user.name);
     }
-  }, []);
+
+    const fetchAllergies = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/user/allergens", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setAllergies(data.allergens || []);
+      } catch (error) {
+        console.error("Failed to fetch allergies", error);
+      }
+    };
+
+    if (token) {
+      fetchAllergies();
+    }
+  }, [token, user]);
 
   const handleUserIconClick = () => {
     setShowForm(!showForm);
-    setShowAllergyForm(false); // close allergy popup if profile is opened
+    setShowAllergyForm(false);
   };
 
   const handleAllergyClick = () => {
     setShowAllergyForm(true);
-    setShowForm(false); // close profile popup if allergy is opened
+    setShowForm(false);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("loggedInEmail");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
     navigate("/");
   };
 
-  const handleAddAllergy = (e) => {
+  const handleAddAllergy = async (e) => {
     e.preventDefault();
     if (!newAllergy.trim()) return;
 
@@ -51,15 +66,44 @@ const Navbar = () => {
       updatedAllergies.push(newAllergy);
     }
 
-    setAllergies(updatedAllergies);
-    localStorage.setItem("allergies", JSON.stringify(updatedAllergies));
-    setNewAllergy("");
+    try {
+      const res = await fetch("http://localhost:5000/api/user/allergens", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ allergens: updatedAllergies }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update allergies");
+
+      setAllergies(updatedAllergies);
+      setNewAllergy("");
+    } catch (error) {
+      console.error("Failed to update allergies", error);
+    }
   };
 
-  const handleDeleteAllergy = (allergyToDelete) => {
-    const updatedAllergies = allergies.filter((a) => a !== allergyToDelete);
-    setAllergies(updatedAllergies);
-    localStorage.setItem("allergies", JSON.stringify(updatedAllergies));
+  const handleDeleteAllergy = async (allergyToDelete) => {
+    const filtered = allergies.filter((a) => a !== allergyToDelete);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/user/allergens", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ allergens: [allergyToDelete] }),
+      });
+
+      if (!res.ok) throw new Error("Failed to delete allergy");
+
+      setAllergies(filtered);
+    } catch (error) {
+      console.error("Failed to delete allergy", error);
+    }
   };
 
   const handleEditAllergy = (index) => {
