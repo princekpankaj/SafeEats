@@ -6,10 +6,12 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const scanRoutes = require('./routes/scanRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const chatbotRoutes = require("./routes/chatbotRoutes");
 
 
 // Load env vars
 dotenv.config();
+// console.log("🔐 GEMINI_API_KEY loaded as:", process.env.GEMINI_API_KEY);
 
 // Connect to MongoDB
 connectDB();
@@ -21,6 +23,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/scan', scanRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

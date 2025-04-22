@@ -18,6 +18,10 @@ This is a Node.js backend project that allows users to register, save their alle
    - Compares product ingredients with saved allergens.
    - Returns whether the product is safe or not along with nutrition facts.
 
+4. **User Uses ChatBot**
+   - Sends a dietary or recipe-related question.
+   - Backend sends it to Gemini API and returns the HTML-formatted answer.
+
 ---
 
 ## 🚀 Tech Stack
@@ -26,6 +30,7 @@ This is a Node.js backend project that allows users to register, save their alle
 - **MongoDB + Mongoose**
 - **JWT Authentication**
 - **Open Food Facts API**
+- **Gemini API (Google Generative Language)**
 
 ---
 
@@ -94,7 +99,6 @@ Authorization: Bearer <JWT_TOKEN>
   "allergens": ["soy"]
 }
 ```
-
 Removes one or more specified allergens from the user’s list.
 
 ---
@@ -130,6 +134,27 @@ Removes one or more specified allergens from the user’s list.
 
 ---
 
+### 🤖 ChatBot Route
+
+#### 💬 Ask a Dietary Question  
+`POST /api/chatbot/ask`
+
+```json
+{
+  "query": "Can you suggest a healthy breakfast recipe with oats and banana?"
+}
+```
+
+✅ Sample Response:
+
+```json
+{
+  "recipe": "<h2>Recipe: Banana Oatmeal</h2><h3>Ingredients:</h3><ul><li>1 cup oats</li><li>1 banana</li><li>1 cup milk</li></ul><h3>Equipment:</h3><ul><li>Pot</li><li>Spoon</li></ul><h3>Instructions:</h3><ol><li>Boil milk in a pot.</li><li>Add oats and cook for 5 minutes.</li><li>Mash banana and stir it in.</li></ol><p>Tip: Add cinnamon or honey for taste.</p>"
+}
+```
+
+---
+
 ## ⚙️ Setup Instructions
 
 ```bash
@@ -152,6 +177,7 @@ touch .env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ```bash
@@ -180,9 +206,11 @@ npm start
 - ✅ Compare allergens with product ingredients
 - ✅ Display nutrition information
 - ✅ Add allergen update and delete APIs
+- ✅ Add chatbot integration using Gemini API
 
-# future Scope
+---
+
+## 🛠️ Future Scope
+
 - 🔜 Rate limiting or abuse protection
 - 🔜 Admin dashboard for product scan logs
-
---
