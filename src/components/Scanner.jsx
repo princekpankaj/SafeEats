@@ -8,17 +8,47 @@ const Scanner = () => {
   const [matchedAllergens, setMatchedAllergens] = useState([]);
   const [message, setMessage] = useState("");
   const [recipeImage, setRecipeImage] = useState(null);
+  const [recipeText, setRecipeText] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const scannerContainerRef = useRef(null);
   const qrCodeScannerRef = useRef(null);
 
-  const handleRecipeImageUpload = (event) => {
+
+  // set as global base url to fecth api
+  const API_BASE = "http://localhost:5000";
+
+  const handleRecipeImageUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setRecipeImage(reader.result);
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+        setRecipeImage(base64Image);
+
+        try {
+          const token = localStorage.getItem("accessToken");
+          const res = await fetch(`${API_BASE}/api/chatbot/recipe`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ image: base64Image }),
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            setRecipeText(data.text);
+          } else {
+            setRecipeText("Failed to analyze recipe image.");
+          }
+        } catch (err) {
+          console.error("Recipe OCR error:", err);
+          setRecipeText("Something went wrong while analyzing recipe.");
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -26,10 +56,12 @@ const Scanner = () => {
 
   const handleBarcodeSubmit = async () => {
     if (!barcodeInput.trim()) return;
+    setLoading(true);
+    setError("");
 
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch("http://localhost:5000/api/scan", {
+      const res = await fetch(`${API_BASE}/api/scan`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,13 +81,14 @@ const Scanner = () => {
         setMatchedAllergens(matchedAllergens);
         setMessage(message);
       } else {
-        alert(data.message || "Failed to fetch scan result.");
+        setError(data.message || "Failed to fetch scan result.");
       }
     } catch (error) {
       console.error("Scan error:", error);
-      alert("Something went wrong while scanning.");
+      setError("Something went wrong while scanning.");
     }
 
+    setLoading(false);
     setBarcodeInput("");
     closeModal();
   };
@@ -74,7 +107,7 @@ const Scanner = () => {
   };
 
   const startCameraScan = () => {
-    if (!scannerContainerRef.current) return;
+    if (!scannerContainerRef.current || !document.getElementById("scanner-container")) return;
 
     const html5QrCode = new Html5Qrcode("scanner-container");
     qrCodeScannerRef.current = html5QrCode;
@@ -129,6 +162,7 @@ const Scanner = () => {
 
   return (
     <div className="relative m-5">
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-transparent">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-[90%] max-w-md relative">
@@ -170,7 +204,9 @@ const Scanner = () => {
         </div>
       )}
 
+      {/* Main Content */}
       <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Recipe Upload */}
         <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-center mb-6">
             <i className="fas fa-camera text-3xl text-black mr-4"></i>
@@ -198,11 +234,14 @@ const Scanner = () => {
             )}
             <div className="bg-gray-100 p-6 rounded-lg">
               <h3 className="font-semibold mb-4">Recipe Details:</h3>
-              {/* Add OCR or recipe parsing display here */}
+              <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                {recipeText || "No recipe scanned yet."}
+              </p>
             </div>
           </div>
         </div>
 
+        {/* Barcode Scanner */}
         <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-center mb-6">
             <i className="fas fa-barcode text-3xl text-black mr-4"></i>
@@ -224,9 +263,14 @@ const Scanner = () => {
           <button
             onClick={handleBarcodeSubmit}
             className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition"
+            disabled={loading}
           >
-            Submit
+            {loading ? "Scanning..." : "Submit"}
           </button>
+
+          {error && (
+            <p className="text-red-500 text-sm mt-2">{error}</p>
+          )}
 
           {nutritionData && (
             <div className="bg-gray-100 p-6 rounded-lg mt-6">
