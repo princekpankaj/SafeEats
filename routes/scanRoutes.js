@@ -23,7 +23,13 @@ router.post('/', protect, async (req, res) => {
     }
 
     const product = data.product;
-    const ingredients = product.ingredients_text || '';
+
+    // Prefer English ingredients, fallback to other fields
+    const ingredients =
+      product.ingredients_text_en ||
+      product.ingredients_text ||
+      (product.ingredients?.map(i => i.text).join(', ') || '');
+
     const nutriments = product.nutriments || {};
 
     // 2. Get user's allergens
